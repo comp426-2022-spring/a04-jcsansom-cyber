@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const morgan = require('morgan')
 var express = require("express")
 var app = express()
 const db = require("./database.js")
@@ -49,6 +50,10 @@ app.use((req, res, next) => {
     res.status(200).json(info)
 })
 
+if (log == true) {
+    const accessLog = fs.createWriteStream('access.log', { flags: 'a' })
+    app.use(morgan('combined', { stream: accessLog }))
+}
 
 
 app.get('/app/', (req, res) => {
