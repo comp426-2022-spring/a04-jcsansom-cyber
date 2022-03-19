@@ -1,5 +1,12 @@
 const express = require('express');
 const app = express();
+var express = require("express")
+var app = express()
+const db = require("./database.js")
+var md5 = require("md5");
+const { aggregate } = require('./database.js');
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 var args = require("minimist")(process.argv.slice(2), {
     boolean: ['debug'],           
@@ -8,10 +15,10 @@ var args = require("minimist")(process.argv.slice(2), {
     int: ['port']
   })
   const port = args.port || process.env.PORT || 5555;
-  const debug = args.debug || false;
-  const log = args.log || true;
+  const debug = args.debug || process.env.PORT || false;
+  const log = args.log|| process.env.PORT || true;
   const help = args.help;
-  //console.log(args)
+  console.log(log)
 if (help == true) {
     console.log("server.js [options]")
     console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
@@ -24,7 +31,24 @@ const server = app.listen(port, () => {
     console.log('App listening on port %PORT%'.replace('%PORT%',port))
 });
 
-
+app.use((req, res, next) => {
+    let logdata = {
+        remoteaddr: req.ip,
+        remoteuser: req.user,
+        time: Date.now(),
+        method: req.method,
+        url: req.url,
+        protocol: req.protocol,
+        httpversion: req.httpVersion,
+        secure: req.secure,
+        status: res.statusCode,
+        referer: req.headers['referer'],
+        useragent: req.headers['user-agent']
+    }
+    const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    const info = stmt.run(logdata.remoteaddr, logdata.remoteuser, logdata.time, logdata.method, logdata.url, logdata.protocol, logdata.httpversion, logdata.secure, logdata.status, logdata.referer, logdata.useragent)
+    res.status(200).json(info)
+})
 
 
 
