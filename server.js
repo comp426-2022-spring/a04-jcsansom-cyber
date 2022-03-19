@@ -16,9 +16,10 @@ var args = require("minimist")(process.argv.slice(2), {
   })
   const port = args.port || process.env.PORT || 5555;
   const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
-  const log = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
+  const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
   const help = args.help;
   console.log(debug)
+  console.log(logger)
 if (help == true) {
     console.log("server.js [options]")
     console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
@@ -47,13 +48,13 @@ app.use((req, res, next) => {
     }
     const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
     const info = stmt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
-    if (log == true) {
-        const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' })
-        app.use(morgan('combined', { stream: WRITESTREAM }))
-    }
     next()
 })
 
+const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' })
+if (logger == true) {
+    app.use(morgan('combined', { stream: WRITESTREAM }))
+}
 
 app.get('/app/', (req, res) => {
   res.statusCode = 200;
