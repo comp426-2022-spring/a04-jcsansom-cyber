@@ -18,7 +18,6 @@ var args = require("minimist")(process.argv.slice(2), {
   const debug = args.debug || process.env.PORT || false;
   const log = args.log|| process.env.PORT || true;
   const help = args.help;
-  console.log(log)
 if (help == true) {
     console.log("server.js [options]")
     console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
@@ -90,6 +89,21 @@ function countFlipsH(array) {
     }
   }
   return num_h
+}
+
+if (debug == true) {
+    app.get('/app/log/access', (req, res) => {
+        try {
+            const stmt = db.prepare('SELECT * FROM accesslog').all()
+            res.status(200).json(stmt)
+        } catch {
+            console.error(e)
+        }
+    })
+
+    app.get('/app/error', (req, res) => {
+        throw new Error("Error test successful.")
+    })
 }
 
 app.get('/app/flip/call/heads', (req, res) => {
