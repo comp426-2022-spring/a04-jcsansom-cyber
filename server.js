@@ -1,8 +1,7 @@
 const express = require('express');
 const app = express();
 const morgan = require('morgan')
-var express = require("express")
-var app = express()
+var fs = require('fs')
 const db = require("./database.js")
 var md5 = require("md5");
 const { aggregate } = require('./database.js');
@@ -10,15 +9,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 var args = require("minimist")(process.argv.slice(2), {
-    boolean: ['debug'],           
+    string: ['debug'],           
     boolean: ['help'], 
-    boolean: ['log'],
+    string: ['log'],
     int: ['port']
   })
   const port = args.port || process.env.PORT || 5555;
-  const debug = args.debug || process.env.PORT || false;
-  const log = args.log|| process.env.PORT || true;
+  const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
+  const log = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
   const help = args.help;
+  console.log(debug)
 if (help == true) {
     console.log("server.js [options]")
     console.log("  --port	Set the port number for the server to listen on. Must be an integerbetween 1 and 65535.");
@@ -35,7 +35,7 @@ app.use((req, res, next) => {
     let logdata = {
         remoteaddr: req.ip,
         remoteuser: req.user,
-        time: Date.now(),
+        time: Date.now().toString(),
         method: req.method,
         url: req.url,
         protocol: req.protocol,
@@ -46,14 +46,13 @@ app.use((req, res, next) => {
         useragent: req.headers['user-agent']
     }
     const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url,  protocol, httpversion, secure, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    const info = stmt.run(logdata.remoteaddr, logdata.remoteuser, logdata.time, logdata.method, logdata.url, logdata.protocol, logdata.httpversion, logdata.secure, logdata.status, logdata.referer, logdata.useragent)
-    res.status(200).json(info)
+    const info = stmt.run(logdata.remoteaddr.toString(), logdata.remoteuser, logdata.time, logdata.method.toString(), logdata.url.toString(), logdata.protocol.toString(), logdata.httpversion.toString(), logdata.secure.toString(), logdata.status.toString(), logdata.referer, logdata.useragent.toString())
+    if (log == true) {
+        const WRITESTREAM = fs.createWriteStream('access.log', { flags: 'a' })
+        app.use(morgan('combined', { stream: WRITESTREAM }))
+    }
+    next()
 })
-
-if (log == true) {
-    const accessLog = fs.createWriteStream('access.log', { flags: 'a' })
-    app.use(morgan('combined', { stream: accessLog }))
-}
 
 
 app.get('/app/', (req, res) => {
@@ -96,20 +95,28 @@ function countFlipsH(array) {
   return num_h
 }
 
-if (debug == true) {
-    app.get('/app/log/access', (req, res) => {
+app.get('/app/log/access', (req, res) => {
+    if (debug == true) {
         try {
             const stmt = db.prepare('SELECT * FROM accesslog').all()
             res.status(200).json(stmt)
-        } catch {
+                } catch {
             console.error(e)
+            }
         }
-    })
+        else {
+            res.status(404).type("text/plain").send('404 NOT FOUND')
+        }
+})
 
     app.get('/app/error', (req, res) => {
-        throw new Error("Error test successful.")
+        if (debug == true) {
+            throw new Error("Error test successful.")
+        }
+        else {
+            res.status(404).type("text/plain").send('404 NOT FOUND')
+        }
     })
-}
 
 app.get('/app/flip/call/heads', (req, res) => {
     let call = coinFlip();
