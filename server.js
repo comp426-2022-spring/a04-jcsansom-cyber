@@ -9,13 +9,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 var args = require("minimist")(process.argv.slice(2), {
-    string: ['debug'],           
+    boolean: ['debug'],           
     boolean: ['help'], 
     string: ['log'],
     int: ['port']
   })
   const port = args.port || process.env.PORT || 5555;
-  const debug = ((args.debug === 'true') && (args.debug != null))|| process.env.PORT || false;
+  const debug = ((args.debug === true) && (args.debug != null))|| process.env.PORT || false;
   const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
   const help = args.help;
   console.log(debug)
