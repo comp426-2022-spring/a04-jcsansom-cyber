@@ -11,12 +11,12 @@ app.use(express.json());
 var args = require("minimist")(process.argv.slice(2), {
     boolean: ['debug'],           
     boolean: ['help'], 
-    string: ['log'],
+    boolean: ['log'],
     int: ['port']
   })
   const port = args.port || process.env.PORT || 5555;
   const debug = ((args.debug === true) && (args.debug != null))|| process.env.PORT || false;
-  const logger = ((args.log === 'true') && (args.log != null))|| process.env.PORT || true;
+  const logger = !(((args.log === false) && (args.log != null))|| process.env.PORT || false);
   const help = args.help;
   console.log(debug)
   console.log(logger)
